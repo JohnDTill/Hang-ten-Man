@@ -1,7 +1,13 @@
 import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QFont
+import random
+import requests
 
+
+word_site = "https://www.mit.edu/~ecprice/wordlist.10000"
+response = requests.get(word_site)
+word_bank = response.content.splitlines()
 
 ascii_art = [
     "       |>\n"
@@ -44,14 +50,10 @@ class DlgMain(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Hang-ten man")
-        self.resize(200, 200)
+        self.resize(400, 350)
         self.mainLayout = QVBoxLayout()
 
-        self.word = "Harmony"
-        self.guessedLetters = []
-        self.lives = 3
-
-        font = QFont("unexistent")
+        font = QFont("nonexistent")
         font.setStyleHint(QFont.Monospace)
 
         self.pictorialEdit = QPlainTextEdit(self)
@@ -62,14 +64,12 @@ class DlgMain(QMainWindow):
         self.mainLayout.addWidget(self.pictorialEdit)
 
         self.wordLabel = QLabel()
-        self.update_display_word()
         self.mainLayout.addWidget(self.wordLabel)
 
         self.guessLabel = QLabel()
-        self.update_display_guesses()
         self.mainLayout.addWidget(self.guessLabel)
 
-        self.hintLabel = QLabel("Go ahead- guess a letter!")
+        self.hintLabel = QLabel()
         self.mainLayout.addWidget(self.hintLabel)
 
         self.inputLayout = QHBoxLayout()
@@ -86,6 +86,11 @@ class DlgMain(QMainWindow):
         self.setCentralWidget(QWidget(self))
         self.centralWidget().setLayout(self.mainLayout)
 
+        self.guessedLetters = None
+        self.lives = None
+        self.word = None
+        self.new_game()
+
     def update_display_word(self):
         hidden_word = ""
         for ch in self.word:
@@ -97,7 +102,7 @@ class DlgMain(QMainWindow):
 
     def update_display_guesses(self):
         self.guessLabel.setText("{} guesses remaining".format(self.lives))
-        if(self.lives < len(ascii_art)):
+        if self.lives < len(ascii_art):
             self.pictorialEdit.setPlainText(ascii_art[self.lives])
         else:
             self.pictorialEdit.setPlainText(ascii_art[-1])
@@ -106,7 +111,7 @@ class DlgMain(QMainWindow):
         if self.guessEdit.isEnabled():
             self.on_guess()
         else:
-            self.reset_game()
+            self.new_game()
 
     def on_guess(self):
         guess = self.guessEdit.text().lower()
@@ -132,13 +137,14 @@ class DlgMain(QMainWindow):
             self.update_display_guesses()
             if not self.lives:
                 self.hintLabel.setText("Wipe out!")
+                self.wordLabel.setText(self.word)
                 self.btn.setText("New game")
                 self.guessEdit.setEnabled(False)
 
-    def reset_game(self):
+    def new_game(self):
         self.guessedLetters = []
-        self.lives = 3
-        self.word = "Aardvark"
+        self.lives = 4
+        self.word = random.choice(word_bank).decode("utf-8").capitalize()
         self.update_display_word()
         self.update_display_guesses()
         self.btn.setText("Submit")
